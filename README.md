@@ -8,7 +8,7 @@ It deploys [Filebrowser](https://filebrowser.org/) in a standard configuration.
 ## Example
 ```terraform
 module "efs_file_browser" {
-  source = "github.com/hashicorp/tecracer/efs-file-browser-on-ecs&ref=v1.0.0"
+  source = "github.com/tecracer/efs-file-browser-on-ecs&ref=v1.0.0"
 
   name_prefix                   = "application-xyz"
   enable_execute_command        = true

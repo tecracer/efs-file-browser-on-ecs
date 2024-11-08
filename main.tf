@@ -122,6 +122,7 @@ module "ecs_service_efs_file_browser" {
   task_exec_iam_role_arn = var.task_execution_role_arn
   tasks_iam_role_arn     = var.task_role_arn
   iam_role_arn           = var.task_role_arn
+
 }
 
 resource "aws_lb_target_group" "efs_file_browser" {
@@ -133,12 +134,11 @@ resource "aws_lb_target_group" "efs_file_browser" {
   deregistration_delay = "5"
 }
 
-resource "aws_lb_listener" "efs_file_browser" {
+resource "aws_lb_listener" "efs_file_browser_http" {
+  count             = var.enable_https ? 0 : 1
   load_balancer_arn = var.alb_arn
   port              = var.alb_listener_port
-  protocol          = var.enable_https ? "HTTPS" : "HTTP"
-  ssl_policy        = var.enable_https ? "ELBSecurityPolicy-2016-08" : null
-  certificate_arn   = var.enable_https ? var.alb_listener_certificate_arn : null
+  protocol          = "HTTP"
 
   default_action {
     type = "fixed-response"
@@ -153,9 +153,31 @@ resource "aws_lb_listener" "efs_file_browser" {
   depends_on = [aws_lb_target_group.efs_file_browser]
 }
 
+resource "aws_lb_listener" "efs_file_browser_https" {
+  count             = var.enable_https ? 1 : 0
+  load_balancer_arn = var.alb_arn
+  port              = var.alb_listener_port
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = var.alb_listener_certificate_arn
+
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "IP not whitelisted"
+      status_code  = "200"
+    }
+  }
+
+  depends_on = [aws_lb_target_group.efs_file_browser]
+}
+
+
 //This rule does allow access to Jenkins for every Source IP in QA and Dev while limiting access to the Jenkins UI in Prod to SEE IPs
 resource "aws_lb_listener_rule" "efs_file_browser" {
-  listener_arn = aws_lb_listener.efs_file_browser.arn
+  listener_arn = var.enable_https ? aws_lb_listener.efs_file_browser_https[0].arn : aws_lb_listener.efs_file_browser_http[0].arn
   priority     = 10
 
   action {
