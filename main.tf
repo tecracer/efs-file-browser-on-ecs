@@ -74,11 +74,11 @@ module "ecs_service_efs_file_browser" {
         },
         {
           name  = "FB_PASSWORD"
-          value = var.filebrowser_password
+          value = bcrypt(var.filebrowser_password)
         },
         {
           name  = "FB_USERNAME"
-          value = bcrypt(var.filebrowser_username)
+          value = var.filebrowser_username
         }
       ]
 
