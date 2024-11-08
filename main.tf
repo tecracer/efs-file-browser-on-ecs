@@ -2,6 +2,22 @@ locals {
   filebrowser_service_name   = "${var.name_prefix}-file-browser"
   filebrowser_container_name = "efs-filebrowser"
   filebrowser_container_port = 80
+
+}
+
+resource "terraform_data" "filebrowser_password" {
+  # this is a workaround to avoid terraform from hashing and applying the password on every apply
+  input = bcrypt(var.filebrowser_password)
+
+  triggers_replace = {
+    password = var.filebrowser_password
+  }
+
+  lifecycle {
+    ignore_changes = [
+      input
+    ]
+  }
 }
 
 module "ecs_service_efs_file_browser" {
@@ -74,7 +90,7 @@ module "ecs_service_efs_file_browser" {
         },
         {
           name  = "FB_PASSWORD"
-          value = bcrypt(var.filebrowser_password)
+          value = terraform_data.filebrowser_password.input
         },
         {
           name  = "FB_USERNAME"
